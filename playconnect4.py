@@ -3,7 +3,8 @@
 from gamecontroller import *
 
 def main():
-    gc = TextGameController()
+    # gc = TextGameController()
+    gc = TextGameControllerEndOnly('TrueRandom', 'TrueRandom')
     gc.playGame()
 
 if __name__ == '__main__':

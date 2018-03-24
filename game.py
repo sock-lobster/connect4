@@ -36,40 +36,101 @@ class Board(object):
         while len(self.testPieces) > 0:
             self.removeTestPiece()
 
+    def checkConsecutive(self, location, minus, plus, operations, playerNum):
+        consecutive = 0
+        row = location['row']
+        column = location['column']
+        rowop = operations['row']
+        colop = operations['col']
+        for i in range(minus, plus):
+            if self.array[row+i*rowop][column+i*colop] == playerNum:
+                consecutive += 1
+                if consecutive == 4:
+                    return True
+            else:
+                consecutive = 0
+        return False
+
     def checkWin(self, location, player):
-        playerNumber = player.number
+        playerNum = player.number
         row = location['row']
         column = location['column']
 
-        #Check horozontal
-        consecutive = 0
-        for i in range(max(0, column-3), min(self.width, column+3)):
-            if self.array[row][i] == playerNumber:
-                consecutive += 1
-                if consecutive == 4:
-                    return player
-            else:
-                consecutive = 0
-        #Check vertical
-        if (row >= 3 and
-            self.array[row][column] == playerNumber and
-            self.array[row-1][column] == playerNumber and
-            self.array[row-2][column] == playerNumber and
-            self.array[row-3][column] == playerNumber):
+        # Check vertical
+        minus = -min(row, 3)
+        plus = min(self.height-row, 4)
+        operations = {'row': 1, 'col': 0}
+        if self.checkConsecutive(location, minus, plus, operations, playerNum):
             return player
+        # consecutive = 0
+        # for i in range(minus, plus):
+        #     if self.array[row+i][column] == playerNum:
+        #         consecutive += 1
+        #         if consecutive == 4:
+        #             return player
+        #     else:
+        #         consecutive = 0
+        # if (row >= 3 and
+        #     self.array[row][column] == playerNum and
+        #     self.array[row-1][column] == playerNum and
+        #     self.array[row-2][column] == playerNum and
+        #     self.array[row-3][column] == playerNum):
+        #
+        #     return player
 
-        #Check diagonal up
+        # Check horozontal
+        minus = -min(column, 3)
+        plus = min(self.width-column, 4)
+        operations = {'row': 0, 'col': 1}
+        if self.checkConsecutive(location, minus, plus, operations, playerNum):
+            return player
+        # consecutive = 0
+        # for i in range(minus, plus):
+        #     if self.array[row][column+i] == playerNum:
+        #         consecutive += 1
+        #         if consecutive == 4:
+        #             return player
+        #     else:
+        #         consecutive = 0
+
+        # Check diagonal up
+        minus = -min(row, column, 3)
+        plus = min(self.height-row, self.width-column, 4)
+        operations = {'row': 1, 'col': 1}
+        if self.checkConsecutive(location, minus, plus, operations, playerNum):
+            return player
+        # consecutive = 0
+        # for i in range(minus, plus):
+        #     if self.array[row+i][column+i] == playerNum:
+        #         consecutive += 1
+        #         if consecutive == 4:
+        #             return player
+        #     else:
+        #         consecutive = 0
+
+        # Check diagonal down
+        minus = -min(self.height-row-1, column, 3)
+        plus = min(row+1, self.width-column, 4)
+        operations = {'row': -1, 'col': 1}
+        if self.checkConsecutive(location, minus, plus, operations, playerNum):
+            return player
+        # consecutive = 0
+        # for i in range(minus, plus):
+        #     if self.array[row-i][column+i] == playerNum:
+        #         consecutive += 1
+        #         if consecutive == 4:
+        #             return player
+        #     else:
+        #         consecutive = 0
 
 class Game(object):
-    def __init__(self, height, width, p1type='Human', p2type='Human'):
+    def __init__(self, height, width, p1type, p2type):
         pf = PlayerFactory()
         self.board = Board(width, height)
         self.p1 = pf.makePlayer(p1type, 1, self)
         self.p2 = pf.makePlayer(p2type, 2, self)
         self.turn = 1
         self.winner = None
-
-
 
     def takeTurn(self):
         turnTaker = None
@@ -83,3 +144,6 @@ class Game(object):
         self.turn += 1
         if winner:
             return winner
+
+        if self.turn > self.board.height * self.board.width:
+            return Draw()
