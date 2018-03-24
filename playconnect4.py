@@ -4,7 +4,7 @@ from gamecontroller import *
 
 def main():
     # gc = TextGameController()
-    gc = TextGameControllerEndOnly('TrueRandom', 'TrueRandom')
+    gc = TextGameControllerEndOnly('TrueRandom', 'SmartRandom')
     gc.playGame()
 
 if __name__ == '__main__':

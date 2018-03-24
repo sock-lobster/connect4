@@ -10,8 +10,20 @@ class Board(object):
         self.array = [[0]*width for i in range(height)]
         self.testPieces = []
 
+    def __repr__(self):
+        printstr = ''
+        sprites = {0 : ' ', 1 : '0', 2 : 'X'}
+        for i in range(self.height-1, -1, -1):
+            row = self.array[i]
+            printstr += "|" + "|".join([sprites[j] for j in row]) + "|\n"
+        printstr += "=="*(self.width + 1) + "\n"
+        printstr += " "+" ".join(str(k) for k in range(1,self.width+1))
+        return printstr
+
     # Put the player's piece into the board at the desired column
-    def addPiece(self, column, player):
+    def addPiece(self, column, player, test=False):
+        if not test:
+            assert len(self.testPieces) == 0, "real pieces on test pieces."
         if -1 >= column or column >= self.width:
             raise RuntimeError("Invalid column")
         # Don't put a piece in a full column
@@ -25,8 +37,9 @@ class Board(object):
                     return {'row':row, 'column':column}
 
     def addTestPiece(self, column, player):
-        self.testPieces.append(self.addPiece(column, player))
-        print self.testPieces
+        location = self.addPiece(column, player, True)
+        self.testPieces.append(location)
+        return location
 
     def removeTestPiece(self):
         location = self.testPieces.pop()
@@ -36,14 +49,14 @@ class Board(object):
         while len(self.testPieces) > 0:
             self.removeTestPiece()
 
-    def checkConsecutive(self, location, minus, plus, operations, playerNum):
+    def checkConsecutive(self, location, minus, plus, operations, player):
         consecutive = 0
         row = location['row']
         column = location['column']
         rowop = operations['row']
         colop = operations['col']
         for i in range(minus, plus):
-            if self.array[row+i*rowop][column+i*colop] == playerNum:
+            if self.array[row+i*rowop][column+i*colop] == player:
                 consecutive += 1
                 if consecutive == 4:
                     return True
@@ -52,7 +65,6 @@ class Board(object):
         return False
 
     def checkWin(self, location, player):
-        playerNum = player.number
         row = location['row']
         column = location['column']
 
@@ -60,68 +72,29 @@ class Board(object):
         minus = -min(row, 3)
         plus = min(self.height-row, 4)
         operations = {'row': 1, 'col': 0}
-        if self.checkConsecutive(location, minus, plus, operations, playerNum):
+        if self.checkConsecutive(location, minus, plus, operations, player):
             return player
-        # consecutive = 0
-        # for i in range(minus, plus):
-        #     if self.array[row+i][column] == playerNum:
-        #         consecutive += 1
-        #         if consecutive == 4:
-        #             return player
-        #     else:
-        #         consecutive = 0
-        # if (row >= 3 and
-        #     self.array[row][column] == playerNum and
-        #     self.array[row-1][column] == playerNum and
-        #     self.array[row-2][column] == playerNum and
-        #     self.array[row-3][column] == playerNum):
-        #
-        #     return player
 
         # Check horozontal
         minus = -min(column, 3)
         plus = min(self.width-column, 4)
         operations = {'row': 0, 'col': 1}
-        if self.checkConsecutive(location, minus, plus, operations, playerNum):
+        if self.checkConsecutive(location, minus, plus, operations, player):
             return player
-        # consecutive = 0
-        # for i in range(minus, plus):
-        #     if self.array[row][column+i] == playerNum:
-        #         consecutive += 1
-        #         if consecutive == 4:
-        #             return player
-        #     else:
-        #         consecutive = 0
 
         # Check diagonal up
         minus = -min(row, column, 3)
         plus = min(self.height-row, self.width-column, 4)
         operations = {'row': 1, 'col': 1}
-        if self.checkConsecutive(location, minus, plus, operations, playerNum):
+        if self.checkConsecutive(location, minus, plus, operations, player):
             return player
-        # consecutive = 0
-        # for i in range(minus, plus):
-        #     if self.array[row+i][column+i] == playerNum:
-        #         consecutive += 1
-        #         if consecutive == 4:
-        #             return player
-        #     else:
-        #         consecutive = 0
 
         # Check diagonal down
         minus = -min(self.height-row-1, column, 3)
         plus = min(row+1, self.width-column, 4)
         operations = {'row': -1, 'col': 1}
-        if self.checkConsecutive(location, minus, plus, operations, playerNum):
+        if self.checkConsecutive(location, minus, plus, operations, player):
             return player
-        # consecutive = 0
-        # for i in range(minus, plus):
-        #     if self.array[row-i][column+i] == playerNum:
-        #         consecutive += 1
-        #         if consecutive == 4:
-        #             return player
-        #     else:
-        #         consecutive = 0
 
 class Game(object):
     def __init__(self, height, width, p1type, p2type):
@@ -129,6 +102,7 @@ class Game(object):
         self.board = Board(width, height)
         self.p1 = pf.makePlayer(p1type, 1, self)
         self.p2 = pf.makePlayer(p2type, 2, self)
+        self.p1.setOpponents(self.p2)
         self.turn = 1
         self.winner = None
 
@@ -140,10 +114,11 @@ class Game(object):
             turnTaker = self.p2
 
         location = turnTaker.placePiece()
-        winner = self.board.checkWin(location, turnTaker)
         self.turn += 1
-        if winner:
-            return winner
+
+        win = self.board.checkWin(location, turnTaker.number)
+        if win:
+            return turnTaker
 
         if self.turn > self.board.height * self.board.width:
             return Draw()

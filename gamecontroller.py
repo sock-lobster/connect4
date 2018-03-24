@@ -21,13 +21,8 @@ class GameController(object):
 
 class TextGameController(GameController):
     def display(self):
-        sprites = {0 : ' ', 1 : '0', 2 : 'X'}
-        board = self.game.board.array
-        for i in range(HEIGHT-1, -1, -1):
-            row = board[i]
-            print "|" + "|".join([sprites[j] for j in row]) + "|"
-        print "=="*(WIDTH + 1)
-        print " "+" ".join(str(k) for k in range(1,WIDTH+1))
+        print self.game.board
+
     def displayTurn(self):
         self.display()
 
