@@ -1,7 +1,8 @@
 # game.py
 # Rules engine for a game of connect 4.
 
-from player import *
+from playerfactory import PlayerFactory
+import pdb, traceback
 
 class Board(object):
     def __init__(self, width, height):
@@ -9,6 +10,7 @@ class Board(object):
         self.width = width
         self.array = [[0]*width for i in range(height)]
         self.testPieces = []
+        self.openColumns = dict(zip(range(self.width), [1]*self.width))
 
     def __repr__(self):
         printstr = ''
@@ -23,6 +25,7 @@ class Board(object):
     # Put the player's piece into the board at the desired column
     def addPiece(self, column, player, test=False):
         if not test:
+            # traceback.print_stack()
             assert len(self.testPieces) == 0, "real pieces on test pieces."
         if -1 >= column or column >= self.width:
             raise RuntimeError("Invalid column")
@@ -34,6 +37,8 @@ class Board(object):
             for row in range(self.height):
                 if self.array[row][column] == 0:
                     self.array[row][column] = player
+                    if row == self.height - 1:
+                        del self.openColumns[column]
                     return {'row':row, 'column':column}
 
     def addTestPiece(self, column, player):
@@ -44,6 +49,7 @@ class Board(object):
     def removeTestPiece(self):
         location = self.testPieces.pop()
         self.array[location['row']][location['column']] = 0
+        self.openColumns[location['column']] = 1
 
     def removeAllTestPieces(self):
         while len(self.testPieces) > 0:
@@ -102,6 +108,7 @@ class Game(object):
         self.board = Board(width, height)
         self.p1 = pf.makePlayer(p1type, 1, self)
         self.p2 = pf.makePlayer(p2type, 2, self)
+        self.draw = pf.makePlayer('Draw', 0, self)
         self.p1.setOpponents(self.p2)
         self.turn = 1
         self.winner = None
